@@ -1,0 +1,26 @@
+{
+  "name": "wpstarter/ws-tests-lib",
+  "description": "The WpStarter Framework - Laravel Framework for WordPress",
+  "keywords": ["wordpress", "stater", "laravel","wp","framework"],
+  "license": "MIT",
+  "homepage": "https://github.com/as247",
+  "require": {
+    "php": "^7.3|^8.0"
+  },
+  "require-dev": {
+
+  },
+
+  "autoload": {
+    "files": [
+      "src/Support/helpers.php"
+    ],
+    "psr-4": {
+      "WsTestsLib\\": "src/"
+    }
+  },
+
+
+  "minimum-stability": "dev",
+  "prefer-stable": true
+}
