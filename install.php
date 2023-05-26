@@ -48,7 +48,9 @@ foreach ( $wpdb->tables( 'ms_global' ) as $table => $prefixed_table ) {
     }
 }
 $wpdb->query( 'SET foreign_key_checks = 1' );
-
+function _set_default_permalink_structure_for_tests() {
+    update_option( 'permalink_structure', '/%year%/%monthnum%/%day%/%postname%/' );
+}
 // Prefill a permalink structure so that WP doesn't try to determine one itself.
 add_action( 'populate_options', '_set_default_permalink_structure_for_tests' );
 
