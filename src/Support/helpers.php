@@ -20,3 +20,17 @@
 function tests_add_filter( $hook_name, $callback, $priority = 10, $accepted_args = 1 ) {
     return \WsTestsLib\Support\Hook::addFilter($hook_name,$callback,$priority,$accepted_args);
 }
+
+/**
+ * Load plugin to test at muplugins_loaded hook
+ * @param $plugins string|array Plugin file to load
+ * @return true
+ */
+function tests_load_plugin(...$plugins){
+    $plugins=is_array($plugins[0])?$plugins[0]:$plugins;
+    return tests_add_filter('muplugins_loaded', function()use($plugins){
+        foreach ($plugins as $plugin){
+            require $plugin;
+        }
+    });
+}
