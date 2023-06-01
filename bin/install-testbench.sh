@@ -73,7 +73,7 @@ fi
 
 
 install_wp() {
-
+  echo "Download WordPress to $WP_CORE_DIR..."
 	if [ -d $WP_CORE_DIR ]; then
 		return;
 	fi
@@ -153,10 +153,11 @@ install_testbench() {
 	  cp $WP_TESTS_DIR/bootstrap-sample.php $TESTS_DIR/bootstrap.php
 	fi
 
-	echo "Done"
+	echo "==========================Done==============================="
 	echo "WP core PATH: $WP_CORE_DIR"
-	echo "Test suite PATH: $WP_TESTS_DIR"
-	echo "phpunit bootstrap PATH: $TESTS_DIR/bootstrap.php"
+	echo "Test bench PATH: $WP_TESTS_DIR"
+	echo "Phpunit bootstrap PATH: $TESTS_DIR/bootstrap.php"
+	echo "=============================================================="
 
 
 }
