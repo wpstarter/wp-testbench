@@ -72,7 +72,7 @@ else
 fi
 
 
-install_wp() {
+download_wp() {
   echo "Download WordPress to $WP_CORE_DIR..."
 	if [ -d $WP_CORE_DIR ]; then
 		return;
@@ -113,7 +113,14 @@ install_wp() {
 
 	download https://raw.github.com/markoheijnen/wp-mysqli/master/db.php $WP_CORE_DIR/wp-content/db.php
 }
-
+download_testbench(){
+  if [ ! -d $WP_TESTS_DIR ]; then
+    echo "Clone testbench from git"
+    git clone https://github.com/wpstarter/wp-testbench.git $WP_TESTS_DIR
+    cd $WP_TESTS_DIR
+    composer install
+  fi
+}
 install_testbench() {
 	# portable in-place argument for both GNU sed and Mac OSX sed
 	if [[ $(uname -s) == 'Darwin' ]]; then
@@ -122,13 +129,7 @@ install_testbench() {
 		local ioption='-i'
 	fi
 
-	# set up testing suite if it doesn't yet exist
-	if [ ! -d $WP_TESTS_DIR ]; then
-		# set up testing suite
-		git clone https://github.com/wpstarter/ws-testbench.git $WP_TESTS_DIR
-		cd $WP_TESTS_DIR
-		composer install
-	fi
+
   cd $WP_TESTS_DIR
   if [ $DB_RECREATED = "y" ]; then
     rm -f wp-tests-config.php
@@ -212,7 +213,7 @@ install_db() {
 		create_db
 	fi
 }
-
-install_wp
+download_testbench
+download_wp
 install_db
 install_testbench
