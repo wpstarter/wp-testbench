@@ -29,6 +29,10 @@ if(!defined('ABSPATH')){
     echo 'Error: no ABSPATH';
     exit(1);
 }
+if(!isset($_SERVER['HTTP_HOST'])){
+    $_SERVER['HTTP_HOST']='example.org';
+}
+
 require_once ABSPATH . 'wp-settings.php';
 
 

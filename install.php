@@ -32,9 +32,6 @@ $wpdb->select( DB_NAME, $wpdb->dbh );
 
 echo 'Installing...' . PHP_EOL;
 
-if(!isset($_SERVER['HTTP_HOST'])){
-    $_SERVER['HTTP_HOST']='example.org';
-}
 
 $wpdb->query( 'SET foreign_key_checks = 0' );
 foreach ( $wpdb->tables() as $table => $prefixed_table ) {
