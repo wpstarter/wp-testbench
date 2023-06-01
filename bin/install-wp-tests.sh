@@ -153,6 +153,12 @@ install_test_suite() {
 	  cp $WP_TESTS_DIR/bootstrap-sample.php $TESTS_DIR/bootstrap.php
 	fi
 
+	echo "Done"
+	echo "WP core PATH: $WP_CORE_DIR"
+	echo "Test suite PATH: $WP_TESTS_DIR"
+	echo "phpunit bootstrap PATH: $TESTS_DIR/bootstrap.php"
+
+
 }
 
 recreate_db() {
