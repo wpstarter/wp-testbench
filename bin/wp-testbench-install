@@ -53,8 +53,8 @@ class WpTestBenchInstaller{
         $this->tmpDir = rtrim($this->tmpDir, "/");
         $this->wpTestDir=getenv( 'WP_TESTBENCH_DIR' );
         if(!$this->wpTestDir) {
-            if($this->isRunningInsideVendor() && is_dir(dirname(__DIR__).'/wp-testbench')){
-                $this->wpTestDir=dirname(__DIR__).'/wp-testbench';
+            if($this->isRunningInsideVendor()){
+                $this->wpTestDir=dirname(__DIR__);
             }else {
                 $this->wpTestDir = $this->tmpDir . '/wp-testbench';
             }
@@ -63,6 +63,7 @@ class WpTestBenchInstaller{
         $this->detectVersion();
     }
     function detectVersion(){
+        $this->line('WpTestbench directory: '.$this->wpTestDir);
         $this->line("Looking for version $this->wpVersion");
         if($this->wpVersion==='latest'){//Use latest version
             $versionInfo = json_decode(file_get_contents("http://api.wordpress.org/core/version-check/1.7/"));
@@ -234,11 +235,10 @@ class WpTestBenchInstaller{
     function installTestbench()
     {
         if ($this->dbWasCreated) {
-            unlink("{$this->wpTestDir}/wp-tests-config.php");
-            echo "Reconfigure wp-test-config.php\n";
+            $this->line("Reconfigure wp-test-config.php");
         }
 
-        if (!file_exists("{$this->wpTestDir}/wp-tests-config.php")) {
+        if ($this->dbWasCreated || !file_exists("{$this->wpTestDir}/wp-tests-config.php")) {
             $this->line("Downloading config sample from $this->wpConfigDownload");
             $this->download($this->wpConfigDownload, "$this->wpTestDir/wp-tests-config.php");
             $search = [
@@ -304,7 +304,7 @@ class WpTestBenchInstaller{
 
 
     function isRunningInsideVendor(){
-        return strpos(str_replace('\\','/',__DIR__),'vendor/bin') > 0;
+        return strpos(str_replace('\\','/',__DIR__),'vendor/wpstarter/wp-testbench') > 0;
     }
 
 
