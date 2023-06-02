@@ -1,6 +1,6 @@
 <?php
 
-namespace WsTestsLib\Support;
+namespace WpStarter\WpTestbench\Support;
 
 class Hook
 {

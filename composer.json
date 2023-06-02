@@ -1,5 +1,5 @@
 {
-  "name": "wpstarter/ws-tests-lib",
+  "name": "wpstarter/wp-testbench",
   "description": "The WpStarter Framework - Laravel Framework for WordPress",
   "keywords": ["wordpress", "stater", "laravel","wp","framework"],
   "license": "MIT",
@@ -16,10 +16,12 @@
       "src/Support/helpers.php"
     ],
     "psr-4": {
-      "WsTestsLib\\": "src/"
+      "WpStarter\\WpTestbench\\": "src/"
     }
   },
-
+  "bin": [
+    "bin/wp-testbench-install"
+  ],
 
   "minimum-stability": "dev",
   "prefer-stable": true

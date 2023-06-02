@@ -18,7 +18,7 @@
  * @return true Always returns true.
  */
 function tests_add_filter( $hook_name, $callback, $priority = 10, $accepted_args = 1 ) {
-    return \WsTestsLib\Support\Hook::addFilter($hook_name,$callback,$priority,$accepted_args);
+    return \WpStarter\WpTestbench\Support\Hook::addFilter($hook_name,$callback,$priority,$accepted_args);
 }
 
 /**

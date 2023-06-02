@@ -1,0 +1,356 @@
+#!/usr/bin/env php
+<?php
+
+if (count($argv) < 4) {
+    echo "usage: $argv[0] <db-name> <db-user> <db-pass> [db-host] [wp-version] [skip-database-creation]\n";
+    exit(1);
+}
+
+class WpTestBenchInstaller{
+
+    protected $testBenchUrl='https://github.com/wpstarter/wp-testbench.git';
+    protected $tmpDir;
+    protected $dbHost;
+    protected $dbPort;
+
+    protected $dbSock;
+    protected $dbUser;
+    protected $dbPass;
+    protected $dbName;
+    protected $wpVersion;
+    protected $skipDbCreate;
+    protected $dbWasCreated=false;
+
+    protected $wpTestDir;
+    protected $wpCoreDir;
+    protected $wpCoreVersion;
+    protected $wpCoreDownload;
+    protected $wpConfigDownload;
+
+
+    public function __construct()
+    {
+        global $argv;
+        $this->dbName = $argv[1];
+        $this->dbUser = $argv[2];
+        $this->dbPass = $argv[3];
+        $this->dbHost = $argv[4] ?? "localhost";
+
+        $parts = explode(":", $this->dbHost);
+        $this->dbHost = $parts[0];
+        $sockOrPort = $parts[1] ?? null;
+        if (!empty($sockOrPort)) {
+            if (is_numeric($sockOrPort)) {
+                $this->dbPort=$sockOrPort;
+            } else {
+                $this->dbSock=$sockOrPort;
+            }
+        }
+
+        $this->wpVersion = $argv[5] ?? "latest";
+        $this->skipDbCreate = $argv[6] ?? false;
+        $this->tmpDir = getenv("TMPDIR") ?: sys_get_temp_dir();
+        $this->tmpDir = rtrim($this->tmpDir, "/");
+        $this->wpTestDir=getenv( 'WP_TESTBENCH_DIR' );
+        if(!$this->wpTestDir) {
+            if($this->isRunningInsideVendor() && is_dir(dirname(__DIR__).'/wp-testbench')){
+                $this->wpTestDir=dirname(__DIR__).'/wp-testbench';
+            }else {
+                $this->wpTestDir = $this->tmpDir . '/wp-testbench';
+            }
+        }
+        $this->wpCoreDir=$this->wpTestDir.'/wordpress';
+        $this->detectVersion();
+    }
+    function detectVersion(){
+        $this->line("Looking for version $this->wpVersion");
+        if($this->wpVersion==='latest'){//Use latest version
+            $versionInfo = json_decode(file_get_contents("http://api.wordpress.org/core/version-check/1.7/"));
+            $this->wpCoreVersion=$versionInfo->offers[0]->version ?? '';
+            $this->wpCoreDownload=$versionInfo->offers[0]->download ?? '';
+        }else {
+            $versionInfo = json_decode(file_get_contents("https://api.wordpress.org/core/version-check/1.7/"));
+            $offers=$versionInfo->offers??[];
+            foreach ($offers as $verInfo){
+                if(strpos($verInfo->version,$this->wpVersion)!==false){
+                    $this->wpCoreVersion=$verInfo->version;
+                    $this->wpCoreDownload=$verInfo->download;
+                    break;
+                }
+            }
+        }
+        if($this->wpCoreVersion && $this->wpCoreDownload){
+            $this->wpCoreDownload=str_replace('.zip','.tar.gz',$this->wpCoreDownload);
+            $this->wpConfigDownload="https://develop.svn.wordpress.org/tags/{$this->wpCoreVersion}/wp-tests-config-sample.php";
+            $this->info('Found version: '.$this->wpCoreVersion);
+            $this->line('Download url: '.$this->wpCoreDownload);
+            $this->line('Config url: '.$this->wpConfigDownload);
+        }else{
+            $this->error("No version match with your requested [$this->wpVersion]");
+            exit(2);
+        }
+    }
+    function run(){
+        $this->downloadTestbench();
+        $this->downloadWordpress();
+        $this->installDb();
+        $this->installTestbench();
+
+    }
+
+    function downloadTestbench()
+    {
+        $this->line("Downloading wp-testbench");
+        if (!$this->isRunningInsideVendor()) {
+            if(!is_dir($this->wpTestDir)) {
+                $this->line("Clone from $this->testBenchUrl");
+                exec("git clone $this->testBenchUrl {$this->wpTestDir}");
+                exec("composer install");
+            }else{
+                $this->info("Already downloaded to {$this->wpTestDir}");
+            }
+        }else{
+            $this->info("Installed as composer module don't need to download");
+        }
+    }
+
+    function downloadWordpress()
+    {
+        $this->line("Download WordPress from $this->wpCoreDownload");
+
+        if (!file_exists("$this->wpCoreDir/wp-settings.php")) {
+            if(!is_dir($this->wpCoreDir)) {
+                mkdir($this->wpCoreDir, 0777, true);
+            }
+            $wpTar="{$this->tmpDir}/wordpress.tar.gz";
+            if(file_exists($wpTar)) {
+                unlink($wpTar);
+            }
+            $this->download($this->wpCoreDownload, $wpTar);
+            $this->info("File saved: ".$wpTar);
+            $phar = new PharData("{$this->tmpDir}/wordpress.tar.gz");
+
+            // Extract the files to a temporary directory
+            $tmpDir = $this->tmpDir.'/wp-core';
+            $this->rmDir($tmpDir);
+            $phar->extractTo($tmpDir);
+
+            // Move the files to the desired extraction directory while stripping the leading directory component
+            $iterator = new RecursiveIteratorIterator(
+                new RecursiveDirectoryIterator($tmpDir, RecursiveDirectoryIterator::SKIP_DOTS),
+                RecursiveIteratorIterator::SELF_FIRST
+            );
+
+            foreach ($iterator as $file) {
+                $subpath=$iterator->getSubPathName();
+                $subPos=strpos($subpath, DIRECTORY_SEPARATOR, 1);
+                if($subPos!==false) {
+                    $targetPath = $this->wpCoreDir . DIRECTORY_SEPARATOR . substr($subpath, $subPos);
+                    if ($file->isDir()) {
+                        mkdir($targetPath);
+                    } else {
+                        copy($file, $targetPath);
+                    }
+                }
+            }
+
+            // Remove the temporary directory
+            $phar->__destruct();
+            unset($phar);
+            $this->rmDir($tmpDir);
+
+
+
+        }
+        if(!file_exists("$this->wpCoreDir/wp-settings.php")){
+            //$this->rmDir($this->wpCoreDir);
+            echo "Failed to download WordPress to $this->wpCoreDir";
+            exit(1);
+        }else{
+            $this->info("Success: ".$this->wpCoreDir);
+        }
+    }
+
+    function recreateDb()
+    {
+        $DELETE_EXISTING_DB = readline("Reinstalling will delete the existing test database ({$this->dbName}). Are you sure you want to proceed? [y/N]: ");
+        if (strtolower($DELETE_EXISTING_DB) === "y" || strtolower($DELETE_EXISTING_DB) === "yes") {
+            $cmd = "mysqladmin drop {$this->dbName} -f --user={$this->dbUser} --password={$this->dbPass}";
+            if (!empty($this->dbHost)) {
+                $cmd .= " --host={$this->dbHost}";
+            }
+            exec($cmd);
+            $this->createDb();
+            $this->info("Recreated the database [{$this->dbName}]");
+        } else {
+            $this->line("Leaving the existing database [{$this->dbName}] in place.");
+        }
+    }
+
+    function createDb()
+    {
+        $cmd = "mysqladmin create {$this->dbName} --user={$this->dbUser} --password={$this->dbPass}";
+        if (!empty($this->dbHost)) {
+            $cmd .= " --host={$this->dbHost}";
+        }
+        if(!empty($this->dbSock)){
+            $cmd .= " --sock={$this->dbSock}";
+        }
+        exec($cmd,$output,$result);
+        if(!$this->checkDbConnection()){
+            $this->error('Cannot create db: '.$this->dbName);
+            exit (3);
+        }
+        $this->dbWasCreated=$result===0;
+        return $this->dbWasCreated;
+    }
+
+    function installDb()
+    {
+        if($this->skipDbCreate){
+            return ;
+        }
+
+        $this->line("Testing database connection...");
+        if(!$this->checkDbConnection()){
+            $this->warn("Cannot connect. Try to create database");
+            $this->createDb();
+        }else{
+            $this->recreateDb();
+        }
+    }
+    protected function checkDbConnection(){
+        $connect=null;
+        try {
+            $connect = new mysqli($this->dbHost, $this->dbUser, $this->dbPass, $this->dbName, $this->dbPort, $this->dbSock);
+        }catch (\Exception $exception){
+
+        }
+        if(!$connect || $connect->connect_errno){
+            return false;
+        }
+        return true;
+    }
+    function installTestbench()
+    {
+        if ($this->dbWasCreated) {
+            unlink("{$this->wpTestDir}/wp-tests-config.php");
+            echo "Reconfigure wp-test-config.php\n";
+        }
+
+        if (!file_exists("{$this->wpTestDir}/wp-tests-config.php")) {
+            $this->line("Downloading config sample from $this->wpConfigDownload");
+            $this->download($this->wpConfigDownload, "$this->wpTestDir/wp-tests-config.php");
+            $search = [
+                "dirname( __FILE__ ) . '/src/'",
+                "__DIR__ . '/src/'",
+                "youremptytestdbnamehere",
+                "yourusernamehere",
+                "yourpasswordhere",
+                "localhost",
+            ];
+            $replace = [
+                "dirname( __FILE__ ) . '/wordpress/'",
+                "dirname( __FILE__ ) . '/wordpress/'",
+                $this->dbName,
+                $this->dbUser,
+                $this->dbPass,
+                $this->dbHost,
+            ];
+            file_put_contents("{$this->wpTestDir}/wp-tests-config.php", str_replace($search, $replace, file_get_contents("{$this->wpTestDir}/wp-tests-config.php")));
+            chdir($this->wpTestDir);
+            echo shell_exec("php install.php");
+        }
+
+
+        echo "==========================Done===============================\n";
+        echo "WP Test bench path: {$this->wpTestDir}\n";
+        echo "Bootstrap PATH: {$this->wpTestDir}/bootstrap.php\n";
+        echo "==============================================================\n";
+    }
+
+    function line($str)
+    {
+        echo $str . "\n";
+    }
+
+    function warn($str)
+    {
+        $yellowText = "\033[33m";
+        $resetText = "\033[0m";
+        echo $yellowText . "Warning: " . $str . $resetText . "\n";
+    }
+
+    function info($str)
+    {
+        $cyanText = "\033[36m";
+        $resetText = "\033[0m";
+        echo $cyanText . "Info: " . $str . $resetText . "\n";
+    }
+
+    function success($str)
+    {
+        $greenText = "\033[32m";
+        $resetText = "\033[0m";
+        echo $greenText . "Success: " . $str . $resetText . "\n";
+    }
+
+    function error($str)
+    {
+        $redText = "\033[31m";
+        $resetText = "\033[0m";
+        echo $redText . "Error: " . $str . $resetText . "\n";
+    }
+
+
+    function isRunningInsideVendor(){
+        return strpos(str_replace('\\','/',__DIR__),'vendor/bin') > 0;
+    }
+
+
+
+    function download($url, $destination)
+    {
+        if (function_exists("curl_exec")) {
+            $curl = curl_init($url);
+            $file = fopen($destination, "w");
+            curl_setopt($curl, CURLOPT_FILE, $file);
+            curl_setopt($curl, CURLOPT_FOLLOWLOCATION, true);
+            curl_setopt($curl, CURLOPT_FAILONERROR, true);
+            curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false); // Skip SSL certificate verification
+            curl_setopt($curl, CURLOPT_USERAGENT, 'wp-testbench/curl 1.0'); // Set the user agent
+            if(curl_exec($curl) === false) {
+                $error = curl_error($curl);
+                $errno = curl_errno($curl);
+                // Handle the error here
+                // For example, you can output the error message and error code
+                echo "cURL error: " . $error . " (" . $errno . ")";
+            }
+            curl_close($curl);
+            fclose($file);
+        } elseif (ini_get("allow_url_fopen")) {
+            copy($url, $destination);
+        }
+    }
+    function rmDir($path) {
+        if (!is_dir($path)) {
+            return;
+        }
+        $dirHandle = opendir($path);
+        while (($file = readdir($dirHandle)) !== false) {
+            if ($file !== '.' && $file !== '..') {
+                $filePath = $path . '/' . $file;
+                if (is_dir($filePath)) {
+                    $this->rmDir($filePath);
+                } else {
+                    unlink($filePath);
+                }
+            }
+        }
+        closedir($dirHandle);
+        rmdir($path);
+    }
+
+
+}
+(new WpTestBenchInstaller())->run();

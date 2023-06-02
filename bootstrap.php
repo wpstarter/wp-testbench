@@ -1,38 +1,43 @@
 <?php
 /**
- * Installs WordPress for running the tests and loads WordPress and the test libraries
+ * PHPUnit bootstrap file.
+ *
+ * @package Hello
  */
 
-if ( defined( 'WP_TESTS_CONFIG_FILE_PATH' ) ) {
-    $config_file_path = WP_TESTS_CONFIG_FILE_PATH;
-} else {
-    $config_file_path =  __DIR__;
-    if ( ! file_exists( $config_file_path . '/wp-tests-config.php' ) ) {
-        // Support the config file from the root of the develop repository.
-        if ( basename( $config_file_path ) === 'phpunit' && basename( dirname( $config_file_path ) ) === 'tests' ) {
-            $config_file_path = dirname( dirname( $config_file_path ) );
+if(!$_tests_dir=getenv( 'WP_TESTBENCH_DIR')) {
+    $_tests_dirs = [__DIR__, rtrim(sys_get_temp_dir(), '/\\') . '/wp-testbench'];
+    $_tests_dir = __DIR__;
+    foreach ($_tests_dirs as $_tests_dir_tmp) {
+        if (file_exists("$_tests_dir_tmp/wordpress/wp-settings.php")
+            && file_exists("$_tests_dir_tmp/wp-tests-config.php")
+        ) {
+            $_tests_dir = $_tests_dir_tmp;
         }
     }
-    $config_file_path .= '/wp-tests-config.php';
+    putenv("WP_TESTBENCH_DIR=$_tests_dir");
 }
 
-
-if ( ! is_readable( $config_file_path ) ) {
-    echo 'Error: wp-tests-config.php is missing! Please use wp-tests-config-sample.php to create a config file.' . PHP_EOL;
-    exit( 1 );
-}
-
-require_once $config_file_path;
-
-// Load WordPress.
-if(!defined('ABSPATH')){
-    echo 'Error: no ABSPATH';
+if ( ! file_exists("$_tests_dir/wordpress/wp-settings.php") || !file_exists("$_tests_dir/wp-tests-config.php") ) {
+	echo "Test bench not installed in [$_tests_dir]. Please run install command first." . PHP_EOL;
     exit(1);
+}else {
+
+    if(file_exists("{$_tests_dir}/vendor/autoload.php")) {
+        //Test bench from standalone location
+        require_once "{$_tests_dir}/vendor/autoload.php";
+    }
+
+    $_tests_plugin=getenv('WP_TESTBENCH_PLUGIN');
+    if(!$_tests_plugin && defined('WP_TESTBENCH_PLUGIN')){
+        $_tests_plugin=WP_TESTBENCH_PLUGIN;
+    }
+    if($_tests_plugin){
+        tests_load_plugin($_tests_plugin);
+    }else {
+        echo "No plugin to test, please set WP_TESTBENCH_PLUGIN env variable";
+    }
+
+    // Start up the WP testing environment.
+    require "{$_tests_dir}/load-wp.php";
 }
-if(!isset($_SERVER['HTTP_HOST'])){
-    $_SERVER['HTTP_HOST']='example.org';
-}
-
-require_once ABSPATH . 'wp-settings.php';
-
-

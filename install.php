@@ -14,7 +14,7 @@ define( 'WP_INSTALLING', true );
  */
 define( 'DISABLE_WP_CRON', true );
 
-require_once __DIR__.'/bootstrap.php';
+require_once __DIR__.'/load-wp.php';
 
 require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 require_once ABSPATH . 'wp-includes/class-wpdb.php';
