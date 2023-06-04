@@ -17,15 +17,11 @@ if ( ! file_exists("$_tests_dir/wordpress/wp-settings.php") ) {
     echo "Check https://github.com/wpstarter/wp-testbench for more info.".PHP_EOL;
     exit(1);
 }else {
-    $_testbench_working_dir=getcwd();
     if(file_exists("{$_tests_dir}/vendor/autoload.php")) {
         require_once "{$_tests_dir}/vendor/autoload.php";
     }
-    //Working dir maybe changed reset it back
-    if($_testbench_working_dir!=getcwd()){
-        @chdir($_testbench_working_dir);
-    }
     if($_tests_plugin=wp_testbench_env('WP_TESTBENCH_PLUGIN')){
+        $_tests_plugin=wp_testbench_path($_tests_plugin);
         if(file_exists($_tests_plugin)) {
             tests_load_plugin($_tests_plugin);
         }else{
