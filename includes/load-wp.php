@@ -19,8 +19,7 @@ require_once $config_file_path;
 
 // Load WordPress.
 if(!defined('ABSPATH')){
-    echo 'Error: no ABSPATH';
-    exit(1);
+    define('ABSPATH',__DIR__.'/wordpress/');
 }
 if(!isset($_SERVER['HTTP_HOST'])){
     $_SERVER['HTTP_HOST']='example.org';
