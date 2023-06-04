@@ -56,6 +56,6 @@ if(!function_exists('wp_testbench_path')){
         if(!$currentDir){
             $currentDir=getcwd();
         }
-        return rtrim($currentDir,'\/').DIRECTORY_SEPARATOR.ltrim($path,'\./');
+        return realpath(rtrim($currentDir,'\/').DIRECTORY_SEPARATOR.$path);
     }
 }
