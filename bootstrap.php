@@ -11,7 +11,7 @@ if(!$_tests_dir=wp_testbench_env('WP_TESTBENCH_DIR')) {
     $_tests_dir = __DIR__;
 }
 
-if ( ! file_exists("$_tests_dir/wordpress/wp-settings.php") || !file_exists("$_tests_dir/wp-tests-config.php") ) {
+if ( ! file_exists("$_tests_dir/wordpress/wp-settings.php") ) {
 	echo "WpTestbench is not installed. Please run install command first." . PHP_EOL;
     echo "WpTestbench PATH: ".$_tests_dir.PHP_EOL;
     echo "Check https://github.com/wpstarter/wp-testbench for more info.".PHP_EOL;
