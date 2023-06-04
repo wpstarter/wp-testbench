@@ -8,7 +8,7 @@ if(!function_exists('wp_testbench_env')) {
         if(!empty($_ENV[$var])){
             return $_ENV[$var];
         }
-        return null;
+        return getenv($var);
     }
 }
 if(!function_exists('wp_testbench_putenv')) {
@@ -16,6 +16,6 @@ if(!function_exists('wp_testbench_putenv')) {
     {
         $_SERVER[$var]=$val;
         $_ENV[$var]=$val;
-        //putenv("$var=$val");
+        putenv("$var=$val");
     }
 }
