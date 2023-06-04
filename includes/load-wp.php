@@ -10,8 +10,9 @@ $config_file_path=wp_testbench_path($config_file_path);
 
 
 if ( ! is_readable( $config_file_path ) ) {
-    echo 'Error: '.$config_file_path.' is missing! Please use wp-tests-config-sample.php to create a config file.' . PHP_EOL;
-    exit( 1 );
+    echo "\033[31mError: [$config_file_path] is missing!\033[0m".PHP_EOL;
+    echo "Please use wp-tests-config-sample.php to create a config file." . PHP_EOL;
+    exit(1);
 }
 
 require_once $config_file_path;

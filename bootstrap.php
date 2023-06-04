@@ -12,7 +12,7 @@ if(!$_tests_dir=wp_testbench_env('WP_TESTBENCH_DIR')) {
 }
 
 if ( ! file_exists("$_tests_dir/wordpress/wp-settings.php") ) {
-	echo "WpTestbench is not installed. Please run install command first." . PHP_EOL;
+	echo "\033[31mWpTestbench is not installed. Please run install command first.\033[0m" . PHP_EOL;
     echo "WpTestbench PATH: ".$_tests_dir.PHP_EOL;
     echo "Check https://github.com/wpstarter/wp-testbench for more info.".PHP_EOL;
     exit(1);
@@ -26,9 +26,11 @@ if ( ! file_exists("$_tests_dir/wordpress/wp-settings.php") ) {
             tests_load_plugin($_tests_plugin);
         }else{
             echo "\033[31mPlugin file [$_tests_plugin] is not exits.\033[0m".PHP_EOL;
+            exit(2);
         }
     }else {
         echo "\033[31mNo plugin to test, please set WP_TESTBENCH_PLUGIN env variable.\033[0m".PHP_EOL;
+        exit(3);
     }
 
     // Start up the WP testing environment.
