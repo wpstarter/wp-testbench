@@ -303,6 +303,7 @@ class WpTestBenchInstaller{
         }
 
         if ($this->dbWasCreated || !file_exists("$this->wpTestDir/wp-tests-config.php")) {
+            $this->line('Installing...');
             if(!$customConfig=$this->env('WP_TESTBENCH_CONFIG')){
                 $this->line("Downloading config sample from $this->wpConfigDownload");
                 $this->download($this->wpConfigDownload, "$this->wpTestDir/wp-tests-config.php");
@@ -328,7 +329,7 @@ class WpTestBenchInstaller{
             }
             exec("php $this->wpTestDir/install.php",$output,$result);
             if($result!=0){
-                $this->error($output);
+                $this->error(implode(PHP_EOL,$output));
                 if($customConfig){
                     $this->line("Please ensure that your custom configuration file, $customConfig, is properly configured and verified.");
                 }
