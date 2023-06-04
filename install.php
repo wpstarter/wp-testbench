@@ -64,8 +64,8 @@ if ( ! is_multisite() ) {
     delete_option( 'permalink_structure' );
 }
 remove_action( 'populate_options', '_set_default_permalink_structure_for_tests' );
-
 if ( $multisite ) {
+    global $wp_rewrite;
     echo 'Installing network...' . PHP_EOL;
 
     define( 'WP_INSTALLING_NETWORK', true );
