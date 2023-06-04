@@ -326,11 +326,11 @@ class WpTestBenchInstaller{
             }else{
                 $this->warn("Custom wp-config file used: $customConfig");
             }
-            $output=shell_exec("php $this->wpTestDir/install.php");
-            if(strpos(strtolower($output),'error')!==false){
+            exec("php $this->wpTestDir/install.php",$output,$result);
+            if($result!=0){
                 $this->error($output);
                 if($customConfig){
-                    $this->line('Please verify your custom wp-config file to ensure that it is properly configured.');
+                    $this->line("Please ensure that your custom configuration file, $customConfig, is properly configured and verified.");
                 }
                 exit(1);
             }

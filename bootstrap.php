@@ -25,11 +25,11 @@ if ( ! file_exists("$_tests_dir/wordpress/wp-settings.php") ) {
         if(file_exists($_tests_plugin)) {
             tests_load_plugin($_tests_plugin);
         }else{
-            echo "\033[31mPlugin file [$_tests_plugin] is not exits.\033[0m".PHP_EOL;
+            echo "\033[31mThe plugin file [$_tests_plugin] does not exist. The test cannot be executed.\033[0m".PHP_EOL;
             exit(2);
         }
     }else {
-        echo "\033[31mNo plugin to test, please set WP_TESTBENCH_PLUGIN env variable.\033[0m".PHP_EOL;
+        echo "\033[31mThere is no plugin available for testing. Please set the 'WP_TESTBENCH_PLUGIN' environment variable.\033[0m".PHP_EOL;
         exit(3);
     }
 
