@@ -303,26 +303,37 @@ class WpTestBenchInstaller{
         }
 
         if ($this->dbWasCreated || !file_exists("$this->wpTestDir/wp-tests-config.php")) {
-            $this->line("Downloading config sample from $this->wpConfigDownload");
-            $this->download($this->wpConfigDownload, "$this->wpTestDir/wp-tests-config.php");
-            $search = [
-                "dirname( __FILE__ ) . '/src/'",
-                "__DIR__ . '/src/'",
-                "youremptytestdbnamehere",
-                "yourusernamehere",
-                "yourpasswordhere",
-                "localhost",
-            ];
-            $replace = [
-                "dirname( __FILE__ ) . '/wordpress/'",
-                "dirname( __FILE__ ) . '/wordpress/'",
-                $this->dbName,
-                $this->dbUser,
-                $this->dbPass,
-                $this->dbHost,
-            ];
-            file_put_contents("$this->wpTestDir/wp-tests-config.php", str_replace($search, $replace, file_get_contents("$this->wpTestDir/wp-tests-config.php")));
-            echo shell_exec("php $this->wpTestDir/install.php");
+            if(!$customConfig=$this->env('WP_TESTBENCH_CONFIG')){
+                $this->line("Downloading config sample from $this->wpConfigDownload");
+                $this->download($this->wpConfigDownload, "$this->wpTestDir/wp-tests-config.php");
+                $search = [
+                    "dirname( __FILE__ ) . '/src/'",
+                    "__DIR__ . '/src/'",
+                    "youremptytestdbnamehere",
+                    "yourusernamehere",
+                    "yourpasswordhere",
+                    "localhost",
+                ];
+                $replace = [
+                    "dirname( __FILE__ ) . '/wordpress/'",
+                    "dirname( __FILE__ ) . '/wordpress/'",
+                    $this->dbName,
+                    $this->dbUser,
+                    $this->dbPass,
+                    $this->dbHost,
+                ];
+                file_put_contents("$this->wpTestDir/wp-tests-config.php", str_replace($search, $replace, file_get_contents("$this->wpTestDir/wp-tests-config.php")));
+            }else{
+                $this->warn("Custom wp-config file used: $customConfig");
+            }
+            $output=shell_exec("php $this->wpTestDir/install.php");
+            if(strpos(strtolower($output),'error')!==null){
+                $this->error($output);
+                if($customConfig){
+                    $this->line('Please verify your custom wp-config file to ensure that it is properly configured.');
+                }
+                exit(1);
+            }
         }
 
 
