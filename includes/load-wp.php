@@ -12,7 +12,7 @@ if(!$config_file_path=wp_testbench_env('WP_TESTBENCH_CONFIG')){
 
 
 if ( ! is_readable( $config_file_path ) ) {
-    echo 'Error: wp-tests-config.php is missing! Please use wp-tests-config-sample.php to create a config file.' . PHP_EOL;
+    echo 'Error: '.$config_file_path.' is missing! Please use wp-tests-config-sample.php to create a config file.' . PHP_EOL;
     exit( 1 );
 }
 
