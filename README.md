@@ -18,11 +18,19 @@ Update phpunit.xml
         bootstrap="./vendor/wpstarter/wp-testbench/bootstrap.php"
     
     >
-    ...
-    <php>
-        <env name="WP_TESTBENCH_PLUGIN" value="your-plugin.php"/>
         ...
-    </php>
+        <php>
+            <server name="WP_TESTBENCH_PLUGIN" value="your-plugin.php"/>
+            ...
+        </php>
+    </phpunit>
+
+Custom wp-config.php
+
+    <phpunit>
+        <php>
+            <server name="WP_TESTBENCH_CONFIG" value="your-config.php"/>
+        </php>
     </phpunit>
 
 That's all then you can run the PHPUnit test
