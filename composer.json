@@ -1,7 +1,7 @@
 {
   "name": "wpstarter/wp-testbench",
-  "description": "The WpStarter Framework - Laravel Framework for WordPress",
-  "keywords": ["wordpress", "stater", "laravel","wp","framework"],
+  "description": "A tool to set up a WordPress test environment for PHPUnit testing",
+  "keywords": ["wordpress","test","unit","phpunit","testing"],
   "license": "MIT",
   "homepage": "https://github.com/as247",
   "require": {
