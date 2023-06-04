@@ -57,9 +57,9 @@ class WpTestBenchInstaller{
 
         $this->wpVersion = $argv[5] ?? "latest";
         $this->skipDbCreate = in_array('--skip-database-creation',$argv);
-        $this->tmpDir = getenv("TMPDIR") ?: sys_get_temp_dir();
+        $this->tmpDir = $this->env("TMPDIR") ?: sys_get_temp_dir();
         $this->tmpDir = rtrim($this->tmpDir, "/");
-        $this->wpTestDir=getenv( 'WP_TESTBENCH_DIR' );//Get installation directory
+        $this->wpTestDir=$this->env( 'WP_TESTBENCH_DIR' );//Get installation directory
         if(!$this->wpTestDir) {
             if($this->isRunningInsideVendor()){
                 $this->wpTestDir=dirname(__DIR__);
@@ -455,7 +455,7 @@ class WpTestBenchInstaller{
         if(!empty($_ENV[$var])){
             return $_ENV[$var];
         }
-        return null;
+        return getenv($var);
     }
 
 
