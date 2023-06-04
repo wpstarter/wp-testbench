@@ -338,7 +338,7 @@ class WpTestBenchInstaller{
         }
 
         $bootstrapPath="$this->wpTestDir/bootstrap.php";
-        if(strpos($bootstrapPath,getcwd())!==false && $this->isRunningInsideVendor()) {
+        if(strpos($bootstrapPath,getcwd())!==false && $this->isRunningInsideVendor() && file_exists(getcwd().'/phpunit.xml')) {
             //Convert to relative
             $bootstrapPath = str_replace(getcwd(), '', $bootstrapPath);
             $bootstrapPath = str_replace('\\', '/', $bootstrapPath);
