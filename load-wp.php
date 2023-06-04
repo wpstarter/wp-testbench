@@ -19,8 +19,6 @@ if ( ! is_readable( $config_file_path ) ) {
     exit( 1 );
 }
 
-define('ABSPATH',__DIR__.'/wordpress/');
-
 require_once $config_file_path;
 
 // Load WordPress.

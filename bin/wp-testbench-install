@@ -1,7 +1,7 @@
 #!/usr/bin/env php
 <?php
 
-if (count($argv) < 4) {
+if (count($argv) < 3) {
     echo "usage: $argv[0] <db-name> <db-user> <db-pass> [db-host] [wp-version] [skip-database-creation]\n";
     exit(1);
 }
@@ -27,13 +27,21 @@ class WpTestBenchInstaller{
     protected $wpCoreDownload;
     protected $wpConfigDownload;
 
+    /**
+     * @var mysqli
+     */
+    protected $db;
+
 
     public function __construct()
     {
         global $argv;
         $this->dbName = $argv[1];
         $this->dbUser = $argv[2];
-        $this->dbPass = $argv[3];
+        $this->dbPass = $argv[3]??'';
+        if($this->dbPass=='NULL'){
+            $this->dbPass='';
+        }
         $this->dbHost = $argv[4] ?? "localhost";
 
         $parts = explode(":", $this->dbHost);
@@ -129,6 +137,7 @@ class WpTestBenchInstaller{
             }
             $this->download($this->wpCoreDownload, $wpTar);
             $this->info("File saved: ".$wpTar);
+            $this->line('Extracting...');
             $phar = new PharData("{$this->tmpDir}/wordpress.tar.gz");
 
             // Extract the files to a temporary directory
@@ -176,11 +185,24 @@ class WpTestBenchInstaller{
     {
         $DELETE_EXISTING_DB = readline("Reinstalling will delete the existing test database ({$this->dbName}). Are you sure you want to proceed? [y/N]: ");
         if (strtolower($DELETE_EXISTING_DB) === "y" || strtolower($DELETE_EXISTING_DB) === "yes") {
-            $cmd = "mysqladmin drop {$this->dbName} -f --user={$this->dbUser} --password={$this->dbPass}";
-            if (!empty($this->dbHost)) {
-                $cmd .= " --host={$this->dbHost}";
+            if($this->commandExists('mysqladmin')) {
+                $cmd = "mysqladmin drop {$this->dbName} -f --user={$this->dbUser} --password={$this->dbPass}";
+                if (!empty($this->dbHost)) {
+                    $cmd .= " --host={$this->dbHost}";
+                }
+                exec($cmd,$output,$result);
+                if($result){
+                    $this->error("Failed to drop database {$this->dbName}");
+                    exit(3);
+                }
+            }elseif ($this->db){
+                try {
+                    $this->db->query("drop database {$this->dbName}");
+                }catch (\Exception $e){
+                    $this->error($e->getMessage());
+                    exit(3);
+                }
             }
-            exec($cmd);
             $this->createDb();
             $this->info("Recreated the database [{$this->dbName}]");
         } else {
@@ -190,18 +212,29 @@ class WpTestBenchInstaller{
 
     function createDb()
     {
-        $cmd = "mysqladmin create {$this->dbName} --user={$this->dbUser} --password={$this->dbPass}";
-        if (!empty($this->dbHost)) {
-            $cmd .= " --host={$this->dbHost}";
+        $result=1;
+        if($this->commandExists('mysqladmin')) {
+            $cmd = "mysqladmin create {$this->dbName} --user={$this->dbUser} --password={$this->dbPass}";
+            if (!empty($this->dbHost)) {
+                $cmd .= " --host={$this->dbHost}";
+            }
+            if (!empty($this->dbSock)) {
+                $cmd .= " --sock={$this->dbSock}";
+            }
+            exec($cmd, $output, $result);
+        }elseif($this->db){
+            try {
+                $this->db->query("create database {$this->dbName}");
+                $result=0;
+            }catch (\Exception $e){
+                $this->error($e->getMessage());
+            }
         }
-        if(!empty($this->dbSock)){
-            $cmd .= " --sock={$this->dbSock}";
-        }
-        exec($cmd,$output,$result);
-        if(!$this->checkDbConnection()){
+        if(!$this->verifyDbConnection()){
             $this->error('Cannot create db: '.$this->dbName);
             exit (3);
         }
+        var_dump($result);
         $this->dbWasCreated=$result===0;
         return $this->dbWasCreated;
     }
@@ -213,24 +246,49 @@ class WpTestBenchInstaller{
         }
 
         $this->line("Testing database connection...");
-        if(!$this->checkDbConnection()){
+        $this->checkDbConnection();
+        if(!$this->db){
             $this->warn("Cannot connect. Try to create database");
             $this->createDb();
         }else{
-            $this->recreateDb();
+            try{
+                $this->db->select_db($this->dbName);
+                $this->recreateDb();
+            }catch (\Exception $e){
+                $this->warn("Can connect but no database ".$this->dbName.' Try to create');
+                $this->createDb();
+            }
+
         }
     }
     protected function checkDbConnection(){
-        $connect=null;
+        mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
         try {
-            $connect = new mysqli($this->dbHost, $this->dbUser, $this->dbPass, $this->dbName, $this->dbPort, $this->dbSock);
+            $this->db = new mysqli($this->dbHost, $this->dbUser, $this->dbPass, '', $this->dbPort, $this->dbSock);
         }catch (\Exception $exception){
-
+            $this->error($exception->getMessage());
         }
-        if(!$connect || $connect->connect_errno){
+        if(!$this->db || $this->db->connect_errno){
+            if($this->db) {
+                $this->error($this->db->connect_error);
+            }else{
+                $this->error('Cannot connect to database');
+            }
             return false;
         }
         return true;
+    }
+    protected function verifyDbConnection(){
+        $this->checkDbConnection();
+        if($this->db){
+            try {
+                $this->db->select_db($this->dbName);
+                return true;
+            }catch (Exception $e){
+
+            }
+        }
+        return false;
     }
     function installTestbench()
     {
@@ -349,6 +407,37 @@ class WpTestBenchInstaller{
         }
         closedir($dirHandle);
         rmdir($path);
+    }
+
+    /**
+     * Determines if a command exists on the current environment
+     *
+     * @param string $command The command to check
+     * @return bool True if the command has been found ; otherwise, false.
+     */
+    function commandExists ($command) {
+        $whereIsCommand = (PHP_OS == 'WINNT') ? 'where' : 'which';
+
+        $process = proc_open(
+            "$whereIsCommand $command",
+            array(
+                0 => array("pipe", "r"), //STDIN
+                1 => array("pipe", "w"), //STDOUT
+                2 => array("pipe", "w"), //STDERR
+            ),
+            $pipes
+        );
+        if ($process !== false) {
+            $stdout = stream_get_contents($pipes[1]);
+            $stderr = stream_get_contents($pipes[2]);
+            fclose($pipes[1]);
+            fclose($pipes[2]);
+            proc_close($process);
+
+            return $stdout != '';
+        }
+
+        return false;
     }
 
 

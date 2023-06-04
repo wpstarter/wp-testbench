@@ -5,7 +5,8 @@
   "license": "MIT",
   "homepage": "https://github.com/as247",
   "require": {
-    "php": "^7.3|^8.0"
+    "php": "^7.3|^8.0",
+    "ext-mysqli": "*"
   },
   "require-dev": {
 
