@@ -322,8 +322,7 @@ class WpTestBenchInstaller{
                 $this->dbHost,
             ];
             file_put_contents("$this->wpTestDir/wp-tests-config.php", str_replace($search, $replace, file_get_contents("$this->wpTestDir/wp-tests-config.php")));
-            chdir($this->wpTestDir);
-            echo shell_exec("php install.php");
+            echo shell_exec("php $this->wpTestDir/install.php");
         }
 
 
