@@ -3,6 +3,9 @@
  * Installs WordPress for running the tests and loads WordPress and the test libraries
  */
 require_once __DIR__.'/functions.php';
+if($wp_testbench_working_dir=wp_testbench_env('WP_TESTBENCH_WORKING_DIR')){
+    @chdir($wp_testbench_working_dir);
+}
 if(!$config_file_path=wp_testbench_env('WP_TESTBENCH_CONFIG')){
     $config_file_path =  __DIR__.'/wp-tests-config.php';
 }
