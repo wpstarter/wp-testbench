@@ -4,6 +4,7 @@
  *
  * @todo Reuse the init/load code in init.php
  */
+require_once __DIR__.'/includes/functions.php';
 error_reporting( E_ALL & ~E_DEPRECATED & ~E_STRICT );
 $multisite        = in_array( 'run_ms_tests', $argv, true );
 define( 'WP_INSTALLING', true );
@@ -13,7 +14,9 @@ define( 'WP_INSTALLING', true );
  * because tests are run in CLI mode only.
  */
 define( 'DISABLE_WP_CRON', true );
-
+if($wp_testbench_working_dir=wp_testbench_env('WP_TESTBENCH_WORKING_DIR')){
+    @chdir($wp_testbench_working_dir);
+}
 require_once __DIR__.'/load-wp.php';
 
 require_once ABSPATH . 'wp-admin/includes/upgrade.php';
@@ -23,6 +26,7 @@ require_once ABSPATH . 'wp-includes/class-wpdb.php';
  * default_storage_engine and storage_engine are the same option, but storage_engine
  * was deprecated in MySQL (and MariaDB) 5.5.3, and removed in 5.7.
  */
+global $wpdb;
 if ( version_compare( $wpdb->db_version(), '5.5.3', '>=' ) ) {
     $wpdb->query( 'SET default_storage_engine = InnoDB' );
 } else {

@@ -2,15 +2,9 @@
 /**
  * Installs WordPress for running the tests and loads WordPress and the test libraries
  */
-if(!$config_file_path=getenv('WP_TESTBENCH_CONFIG')){
-    $config_file_path =  __DIR__;
-    if ( ! file_exists( $config_file_path . '/wp-tests-config.php' ) ) {
-        // Support the config file from the root of the develop repository.
-        if ( basename( $config_file_path ) === 'phpunit' && basename( dirname( $config_file_path ) ) === 'tests' ) {
-            $config_file_path = dirname( dirname( $config_file_path ) );
-        }
-    }
-    $config_file_path .= '/wp-tests-config.php';
+require_once __DIR__.'/functions.php';
+if(!$config_file_path=wp_testbench_env('WP_TESTBENCH_CONFIG')){
+    $config_file_path =  __DIR__.'/wp-tests-config.php';
 }
 
 

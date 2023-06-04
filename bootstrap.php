@@ -4,10 +4,10 @@
  *
  * @package WpTestbench
  */
+require_once __DIR__.'/includes/functions.php';
 
-if(!$_tests_dir=getenv( 'WP_TESTBENCH_DIR')) {
+if(!$_tests_dir=wp_testbench_env('WP_TESTBENCH_DIR')) {
     $_tests_dir = __DIR__;
-    putenv("WP_TESTBENCH_DIR=$_tests_dir");
 }
 
 if ( ! file_exists("$_tests_dir/wordpress/wp-settings.php") || !file_exists("$_tests_dir/wp-tests-config.php") ) {
@@ -23,11 +23,7 @@ if ( ! file_exists("$_tests_dir/wordpress/wp-settings.php") || !file_exists("$_t
     if($_testbench_working_dir!=getcwd()){
         @chdir($_testbench_working_dir);
     }
-    $_tests_plugin=getenv('WP_TESTBENCH_PLUGIN');
-    if(!$_tests_plugin && defined('WP_TESTBENCH_PLUGIN')){
-        $_tests_plugin=WP_TESTBENCH_PLUGIN;
-    }
-    if($_tests_plugin){
+    if($_tests_plugin=wp_testbench_env('WP_TESTBENCH_PLUGIN')){
         if(file_exists($_tests_plugin)) {
             tests_load_plugin($_tests_plugin);
         }else{
@@ -38,5 +34,5 @@ if ( ! file_exists("$_tests_dir/wordpress/wp-settings.php") || !file_exists("$_t
     }
 
     // Start up the WP testing environment.
-    require "{$_tests_dir}/load-wp.php";
+    require "{$_tests_dir}/includes/load-wp.php";
 }
