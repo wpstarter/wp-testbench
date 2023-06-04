@@ -6,7 +6,9 @@
   "homepage": "https://github.com/as247",
   "require": {
     "php": "^7.3|^8.0",
-    "ext-mysqli": "*"
+    "ext-mysqli": "*",
+    "ext-json": "*",
+    "ext-readline": "*"
   },
   "require-dev": {
 

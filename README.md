@@ -9,7 +9,7 @@ Install testbench via composer
 
 Install WordPress
 
-    ./vendor/bin/wp-testbench-install <db-name> <db-user> <db-pass> [db-host] [wp-version] [skip-database-creation]
+    ./vendor/bin/wp-testbench-install <db-name> <db-user> [db-pass] [db-host] [wp-version] [--skip-database-creation]
 
 Update phpunit.xml
 

@@ -2,7 +2,7 @@
 <?php
 
 if (count($argv) < 3) {
-    echo "usage: $argv[0] <db-name> <db-user> <db-pass> [db-host] [wp-version] [skip-database-creation]\n";
+    echo "usage: $argv[0] <db-name> <db-user> [db-pass] [db-host] [wp-version] [--skip-database-creation]\n";
     exit(1);
 }
 
@@ -39,7 +39,7 @@ class WpTestBenchInstaller{
         $this->dbName = $argv[1];
         $this->dbUser = $argv[2];
         $this->dbPass = $argv[3]??'';
-        if($this->dbPass=='NULL'){
+        if($this->dbPass=='NULL' || $this->dbPass==='[db-pass]'){
             $this->dbPass='';
         }
         $this->dbHost = $argv[4] ?? "localhost";
@@ -56,7 +56,7 @@ class WpTestBenchInstaller{
         }
 
         $this->wpVersion = $argv[5] ?? "latest";
-        $this->skipDbCreate = $argv[6] ?? false;
+        $this->skipDbCreate = in_array('--skip-database-creation',$argv);
         $this->tmpDir = getenv("TMPDIR") ?: sys_get_temp_dir();
         $this->tmpDir = rtrim($this->tmpDir, "/");
         $this->wpTestDir=getenv( 'WP_TESTBENCH_DIR' );//Get installation directory
@@ -90,7 +90,7 @@ class WpTestBenchInstaller{
         }
         if($this->wpCoreVersion && $this->wpCoreDownload){
             $this->wpCoreDownload=str_replace('.zip','.tar.gz',$this->wpCoreDownload);
-            $this->wpConfigDownload="https://develop.svn.wordpress.org/tags/{$this->wpCoreVersion}/wp-tests-config-sample.php";
+            $this->wpConfigDownload="https://develop.svn.wordpress.org/tags/$this->wpCoreVersion/wp-tests-config-sample.php";
             $this->info('Found version: '.$this->wpCoreVersion);
             $this->line('Download url: '.$this->wpCoreDownload);
             $this->line('Config url: '.$this->wpConfigDownload);
@@ -113,10 +113,10 @@ class WpTestBenchInstaller{
         if (!$this->isRunningInsideVendor()) {
             if(!is_dir($this->wpTestDir)) {
                 $this->line("Clone from $this->testBenchUrl");
-                exec("git clone $this->testBenchUrl {$this->wpTestDir}");
+                exec("git clone $this->testBenchUrl $this->wpTestDir");
                 exec("composer install");
             }else{
-                $this->info("Already downloaded to {$this->wpTestDir}");
+                $this->info("Already downloaded to $this->wpTestDir");
             }
         }else{
             $this->info("Installed as composer module don't need to download");
@@ -131,14 +131,14 @@ class WpTestBenchInstaller{
             if(!is_dir($this->wpCoreDir)) {
                 mkdir($this->wpCoreDir, 0777, true);
             }
-            $wpTar="{$this->tmpDir}/wordpress.tar.gz";
+            $wpTar="$this->tmpDir/wordpress.tar.gz";
             if(file_exists($wpTar)) {
                 unlink($wpTar);
             }
             $this->download($this->wpCoreDownload, $wpTar);
             $this->info("File saved: ".$wpTar);
             $this->line('Extracting...');
-            $phar = new PharData("{$this->tmpDir}/wordpress.tar.gz");
+            $phar = new PharData("$this->tmpDir/wordpress.tar.gz");
 
             // Extract the files to a temporary directory
             $tmpDir = $this->tmpDir.'/wp-core';
@@ -183,58 +183,61 @@ class WpTestBenchInstaller{
 
     function recreateDb()
     {
-        $DELETE_EXISTING_DB = readline("Reinstalling will delete the existing test database ({$this->dbName}). Are you sure you want to proceed? [y/N]: ");
+        $DELETE_EXISTING_DB = readline("Reinstalling will delete the existing test database ($this->dbName). Are you sure you want to proceed? [y/N]: ");
         if (strtolower($DELETE_EXISTING_DB) === "y" || strtolower($DELETE_EXISTING_DB) === "yes") {
             if($this->commandExists('mysqladmin')) {
-                $cmd = "mysqladmin drop {$this->dbName} -f --user={$this->dbUser} --password={$this->dbPass}";
+                $cmd = "mysqladmin drop $this->dbName -f --user=$this->dbUser --password=$this->dbPass";
                 if (!empty($this->dbHost)) {
-                    $cmd .= " --host={$this->dbHost}";
+                    $cmd .= " --host=$this->dbHost";
                 }
                 exec($cmd,$output,$result);
                 if($result){
-                    $this->error("Failed to drop database {$this->dbName}");
+                    $this->error("Failed to drop database [$this->dbName]");
                     exit(3);
                 }
             }elseif ($this->db){
                 try {
-                    $this->db->query("drop database {$this->dbName}");
-                }catch (\Exception $e){
+                    $this->db->query("drop database $this->dbName");
+                }catch (Exception $e){
                     $this->error($e->getMessage());
                     exit(3);
                 }
             }
             $this->createDb();
-            $this->info("Recreated the database [{$this->dbName}]");
+            $this->info("Recreated the database [$this->dbName]");
         } else {
-            $this->line("Leaving the existing database [{$this->dbName}] in place.");
+            $this->line("Leaving the existing database [$this->dbName] in place.");
         }
     }
 
     function createDb()
     {
+        $this->line("Creating database [$this->dbName]...");
         $result=1;
         if($this->commandExists('mysqladmin')) {
-            $cmd = "mysqladmin create {$this->dbName} --user={$this->dbUser} --password={$this->dbPass}";
+            $cmd = "mysqladmin create $this->dbName --user=$this->dbUser --password=$this->dbPass";
             if (!empty($this->dbHost)) {
-                $cmd .= " --host={$this->dbHost}";
+                $cmd .= " --host=$this->dbHost";
             }
             if (!empty($this->dbSock)) {
-                $cmd .= " --sock={$this->dbSock}";
+                $cmd .= " --sock=$this->dbSock";
             }
             exec($cmd, $output, $result);
         }elseif($this->db){
             try {
-                $this->db->query("create database {$this->dbName}");
+                $this->db->query("create database $this->dbName");
                 $result=0;
-            }catch (\Exception $e){
+            }catch (Exception $e){
                 $this->error($e->getMessage());
             }
+        }else{
+            $this->error('Cannot create db: '.$this->dbName);
+            exit(3);
         }
         if(!$this->verifyDbConnection()){
             $this->error('Cannot create db: '.$this->dbName);
             exit (3);
         }
-        var_dump($result);
         $this->dbWasCreated=$result===0;
         return $this->dbWasCreated;
     }
@@ -242,6 +245,7 @@ class WpTestBenchInstaller{
     function installDb()
     {
         if($this->skipDbCreate){
+            $this->warn('Skip database creation');
             return ;
         }
 
@@ -254,7 +258,7 @@ class WpTestBenchInstaller{
             try{
                 $this->db->select_db($this->dbName);
                 $this->recreateDb();
-            }catch (\Exception $e){
+            }catch (Exception $e){
                 $this->warn("Can connect but no database ".$this->dbName.' Try to create');
                 $this->createDb();
             }
@@ -265,7 +269,7 @@ class WpTestBenchInstaller{
         mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
         try {
             $this->db = new mysqli($this->dbHost, $this->dbUser, $this->dbPass, '', $this->dbPort, $this->dbSock);
-        }catch (\Exception $exception){
+        }catch (Exception $exception){
             $this->error($exception->getMessage());
         }
         if(!$this->db || $this->db->connect_errno){
@@ -296,7 +300,7 @@ class WpTestBenchInstaller{
             $this->line("Reconfigure wp-test-config.php");
         }
 
-        if ($this->dbWasCreated || !file_exists("{$this->wpTestDir}/wp-tests-config.php")) {
+        if ($this->dbWasCreated || !file_exists("$this->wpTestDir/wp-tests-config.php")) {
             $this->line("Downloading config sample from $this->wpConfigDownload");
             $this->download($this->wpConfigDownload, "$this->wpTestDir/wp-tests-config.php");
             $search = [
@@ -315,15 +319,15 @@ class WpTestBenchInstaller{
                 $this->dbPass,
                 $this->dbHost,
             ];
-            file_put_contents("{$this->wpTestDir}/wp-tests-config.php", str_replace($search, $replace, file_get_contents("{$this->wpTestDir}/wp-tests-config.php")));
+            file_put_contents("$this->wpTestDir/wp-tests-config.php", str_replace($search, $replace, file_get_contents("$this->wpTestDir/wp-tests-config.php")));
             chdir($this->wpTestDir);
             echo shell_exec("php install.php");
         }
 
 
         $this->success("==========================Done===============================");
-        $this->success("WpTestbench PATH: {$this->wpTestDir}");
-        $this->success("Bootstrap PATH: {$this->wpTestDir}/bootstrap.php");
+        $this->success("WpTestbench PATH: $this->wpTestDir");
+        $this->success("Bootstrap PATH: $this->wpTestDir/bootstrap.php");
         $this->success("==============================================================");
     }
 
@@ -388,6 +392,8 @@ class WpTestBenchInstaller{
             fclose($file);
         } elseif (ini_get("allow_url_fopen")) {
             copy($url, $destination);
+        }else{
+            $this->error("Cannot download ".$url);
         }
     }
     function rmDir($path) {
