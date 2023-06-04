@@ -337,10 +337,16 @@ class WpTestBenchInstaller{
             }
         }
 
-
+        $bootstrapPath="$this->wpTestDir/bootstrap.php";
+        if(strpos($bootstrapPath,getcwd())!==false && $this->isRunningInsideVendor()) {
+            //Convert to relative
+            $bootstrapPath = str_replace(getcwd(), '', $bootstrapPath);
+            $bootstrapPath = str_replace('\\', '/', $bootstrapPath);
+            $bootstrapPath = './'.ltrim($bootstrapPath,'/');
+        }
         $this->success("==========================Done===============================");
-        $this->success("WpTestbench PATH: $this->wpTestDir");
-        $this->success("Bootstrap PATH: $this->wpTestDir/bootstrap.php");
+        $this->success("WpTestbench PATH: \"$this->wpTestDir\"");
+        $this->success("Bootstrap PATH: \"$bootstrapPath\"");
         $this->success("==============================================================");
     }
 
