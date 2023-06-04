@@ -19,7 +19,15 @@ require_once $config_file_path;
 
 // Load WordPress.
 if(!defined('ABSPATH')){
-    define('ABSPATH',__DIR__.'/wordpress/');
+    define('ABSPATH',dirname(__DIR__).'/wordpress/');
+}
+if(
+    !defined( 'DB_USER' ) || !defined( 'DB_PASSWORD' )
+    || !defined( 'DB_NAME' ) || !defined( 'DB_HOST' )
+    || !isset($table_prefix)
+){
+    echo "\033[31mInvalid configuration file, some required constants are not defined.\033[0m";
+    exit(1);
 }
 if(!isset($_SERVER['HTTP_HOST'])){
     $_SERVER['HTTP_HOST']='example.org';
