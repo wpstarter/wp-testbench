@@ -45,7 +45,7 @@ if(!function_exists('_wp_testbench_path_is_absolute')){
 if(!function_exists('_wp_testbench_clean_path')){
     function _wp_testbench_clean_path($path) {
         // Split the path into individual directory components
-        $components = explode('\/', $path);
+        $components = preg_split('#[\\\\/]+#', $path);
 
         // Initialize an empty array to store the cleaned components
         $cleanedComponents = [];
