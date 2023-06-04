@@ -183,7 +183,8 @@ class WpTestBenchInstaller{
 
     function recreateDb()
     {
-        $DELETE_EXISTING_DB = readline("Reinstalling will delete the existing test database ($this->dbName). Are you sure you want to proceed? [y/N]: ");
+        $this->line("Reinstalling will delete the existing test database ($this->dbName).");
+        $DELETE_EXISTING_DB = readline("Are you sure you want to proceed? [y/N]: ");
         if (strtolower($DELETE_EXISTING_DB) === "y" || strtolower($DELETE_EXISTING_DB) === "yes") {
             if($this->commandExists('mysqladmin')) {
                 $cmd = "mysqladmin drop $this->dbName -f --user=$this->dbUser --password=$this->dbPass";
