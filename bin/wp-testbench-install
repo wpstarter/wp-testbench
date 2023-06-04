@@ -51,7 +51,7 @@ class WpTestBenchInstaller{
         $this->skipDbCreate = $argv[6] ?? false;
         $this->tmpDir = getenv("TMPDIR") ?: sys_get_temp_dir();
         $this->tmpDir = rtrim($this->tmpDir, "/");
-        $this->wpTestDir=getenv( 'WP_TESTBENCH_DIR' );
+        $this->wpTestDir=getenv( 'WP_TESTBENCH_DIR' );//Get installation directory
         if(!$this->wpTestDir) {
             if($this->isRunningInsideVendor()){
                 $this->wpTestDir=dirname(__DIR__);
@@ -263,10 +263,10 @@ class WpTestBenchInstaller{
         }
 
 
-        echo "==========================Done===============================\n";
-        echo "WP Test bench path: {$this->wpTestDir}\n";
-        echo "Bootstrap PATH: {$this->wpTestDir}/bootstrap.php\n";
-        echo "==============================================================\n";
+        $this->success("==========================Done===============================");
+        $this->success("WpTestbench PATH: {$this->wpTestDir}");
+        $this->success("Bootstrap PATH: {$this->wpTestDir}/bootstrap.php");
+        $this->success("==============================================================");
     }
 
     function line($str)
@@ -278,28 +278,28 @@ class WpTestBenchInstaller{
     {
         $yellowText = "\033[33m";
         $resetText = "\033[0m";
-        echo $yellowText . "Warning: " . $str . $resetText . "\n";
+        echo $yellowText . $str . $resetText . "\n";
     }
 
     function info($str)
     {
         $cyanText = "\033[36m";
         $resetText = "\033[0m";
-        echo $cyanText . "Info: " . $str . $resetText . "\n";
+        echo $cyanText . $str . $resetText . "\n";
     }
 
     function success($str)
     {
         $greenText = "\033[32m";
         $resetText = "\033[0m";
-        echo $greenText . "Success: " . $str . $resetText . "\n";
+        echo $greenText . $str . $resetText . "\n";
     }
 
     function error($str)
     {
         $redText = "\033[31m";
         $resetText = "\033[0m";
-        echo $redText . "Error: " . $str . $resetText . "\n";
+        echo $redText . $str . $resetText . "\n";
     }
 
 
