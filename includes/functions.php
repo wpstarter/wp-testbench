@@ -50,6 +50,9 @@ if(!function_exists('_wp_testbench_clean_path')){
         // Initialize an empty array to store the cleaned components
         $cleanedComponents = [];
 
+        // Check if the path is an absolute path on Linux
+        $isAbsolute = ($path[0] === '/');
+
         // Iterate through each component
         foreach ($components as $component) {
             // Skip empty components and the current directory (".")
@@ -59,6 +62,10 @@ if(!function_exists('_wp_testbench_clean_path')){
 
             // If the component is the parent directory (".."), remove the last cleaned component
             if ($component === '..') {
+                // Only remove the last component if it is not an absolute path on Linux
+                if ($isAbsolute && count($cleanedComponents) === 0) {
+                    continue;
+                }
                 array_pop($cleanedComponents);
             } else {
                 // Add the component to the cleaned components array
@@ -68,6 +75,11 @@ if(!function_exists('_wp_testbench_clean_path')){
 
         // Reconstruct the cleaned path by joining the cleaned components with "/"
         $cleanedPath = implode(DIRECTORY_SEPARATOR, $cleanedComponents);
+
+        // Prepend the leading slash for absolute paths on Linux
+        if ($isAbsolute && !empty($cleanedPath)) {
+            $cleanedPath = DIRECTORY_SEPARATOR . $cleanedPath;
+        }
 
         return $cleanedPath;
     }
