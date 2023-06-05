@@ -62,11 +62,9 @@ if(!function_exists('_wp_testbench_clean_path')){
 
             // If the component is the parent directory (".."), remove the last cleaned component
             if ($component === '..') {
-                // Only remove the last component if it is not an absolute path on Linux
-                if ($isAbsolute && count($cleanedComponents) === 0) {
-                    continue;
+                if(count($cleanedComponents)>0) {
+                    array_pop($cleanedComponents);
                 }
-                array_pop($cleanedComponents);
             } else {
                 // Add the component to the cleaned components array
                 $cleanedComponents[] = $component;
